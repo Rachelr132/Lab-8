@@ -4,7 +4,6 @@ author: "Rachel Ramos"
 format: html
 execute: 
   echo: true
-  eval: false
 ---
 
 
@@ -49,7 +48,7 @@ measurement errors.
 # You should use `across()`!
 :::
 
-```{r missing values}
+```{r}
 #| label: find-missing-values
 # Count how many rows have *any* missing values
 num_rows_with_na <- trout_data %>%
@@ -79,7 +78,7 @@ missing_summary
 
 ```{r}
 #| label: map-missing-values-of-fish
-missing_summary_map <- map_int(fish, ~sum(is.na(.))) %>% #count NAs for each column
+missing_summary_map <- map_int(trout_data, ~sum(is.na(.))) %>% #count NAs for each column
   enframe(name = "variable", value = "missing_count") %>%
   filter(missing_count > 0)
 
@@ -90,24 +89,24 @@ missing_summary_map
 
 **2. Create ONE thoughtful visualization that explores the frequency of missing values across the different years, sections, and trips.**
 
-```{r clean}
+```{r }
 #| label: visual-of-missing-values-over-time
 
-missing_weight <- trout_data %>% #Filter rows with missing weight
+# Subset data with missing weight
+missing_weight <- trout_data %>%
   filter(is.na(weight))
 
-
-missing_counts <- missing_weight %>%#Count missing values by year, section, and trip
+# Count by year, section, and trip
+missing_counts <- missing_weight %>%
   count(year, section, trip)
-```
 
-```{r figure}
-ggplot(missing_counts, aes(x = trip, y = n, fill = section)) +
+# Plot with trip as factor
+ggplot(missing_counts, aes(x = factor(trip), y = n, fill = section)) +
   geom_col(position = "dodge") +
   facet_wrap(~year) +
   labs(
     title = "Missing Weight Values by Year, Section, and Trip",
-    x = "Trip",
+    x = "Trip (Factor)",
     y = "Count of Missing Values",
     fill = "Section"
   ) +
@@ -131,9 +130,9 @@ I might write the following `R` code to carry out the rescaling procedure for th
 ```{r}
 #| echo: true
 #| eval: false
-fish <- trout_data
 
-fish <- fish |> 
+
+fish <- trout_data |> 
   mutate(
     length = (length - min(length, na.rm = TRUE)) / 
              (max(length, na.rm = TRUE) - min(length, na.rm = TRUE)), 
@@ -219,19 +218,21 @@ statement in order to create a `length_scaled` variable.
 ```{r}
 #| label: compare-original-with-rescaled-lengths
 #| layout-ncol: 2
-fish |>  
-  ggplot(aes(x = length)) + 
-  geom_histogram(binwidth = 45) +
-  labs(x = "Original Values of Fish Length (mm)") +
-  scale_y_continuous(limits = c(0,4000))
 
-# Code for Q7 plot.
-fish2 <- fish %>%
+trout_scaled <- trout_data %>%
   mutate(length_scaled = rescale_01(length))
 
-ggplot(fish, aes(x = length_scaled)) + 
+# Original length plot
+ggplot(trout_scaled, aes(x = length)) +
+  geom_histogram(binwidth = 45, fill = "steelblue") +
+  labs(x = "Original Length (mm)", title = "Original Length") +
+  scale_y_continuous(limits = c(0, 4000)) +
+  theme_minimal()
+
+# Rescaled length plot
+ggplot(trout_scaled, aes(x = length_scaled)) +
   geom_histogram(binwidth = 0.05, fill = "darkorange") +
-  labs(x = "Rescaled Values of Fish Length (0–1)", title = "Rescaled Length") +
+  labs(x = "Rescaled Length (0–1)", title = "Rescaled Length") +
   scale_y_continuous(limits = c(0, 4000)) +
   theme_minimal()
 
